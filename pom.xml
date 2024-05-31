@@ -190,7 +190,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/rsp777/todo-common/</url>
+			<url>https://maven.pkg.github.com/rsp777/todo-common</url>
 		</repository>
 	</repositories>
 	<distributionManagement>
@@ -201,7 +201,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/rsp777/todo-common/</url>
+			<url>https://maven.pkg.github.com/rsp777/register-service</url>
 		</repository>
 	</distributionManagement>
 	<build>
