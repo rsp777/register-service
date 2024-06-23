@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.pawar.todo</groupId>
 	<artifactId>register</artifactId>
-	<version>Release.1.2</version>
+	<version>Release.1.3</version>
 	<name>register-service</name>
 	<description>register-service</description>
 	<properties>
