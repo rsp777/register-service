@@ -65,6 +65,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        env:
+          DEBUG_GAR: ${{ secrets.YOUR_GAR_LOCATION }}
+         
+        run: |
+          echo $DEBUG_GAR
+          
+
 
       - name: Google Auth
         id: auth
