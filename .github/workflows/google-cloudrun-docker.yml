@@ -65,6 +65,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Print env   
         env:
           DEBUG_GAR: ${{ secrets.YOUR_GAR_LOCATION }}
          
