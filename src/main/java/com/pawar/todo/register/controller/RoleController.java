@@ -37,10 +37,7 @@ public class RoleController {
     @Autowired
     private RoleService roleService;
 
-//    @Autowired
-//    public RoleController(RoleService roleService) {
-//        this.roleService = roleService;
-//    }
+
 
     @PostMapping("/roles/add")
     public ResponseEntity<Role> createRole(@Valid @RequestBody RoleDto roleDto) {

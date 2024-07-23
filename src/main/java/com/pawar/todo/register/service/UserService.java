@@ -24,18 +24,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
+import com.pawar.todo.dto.PermissionDto;
 import com.pawar.todo.dto.RoleDto;
 import com.pawar.todo.dto.UserDto;
 import com.pawar.todo.register.entity.Role;
 import com.pawar.todo.register.entity.User;
-import com.pawar.todo.register.entity.UserRole;
-import com.pawar.todo.register.entity.UserRoleId;
+
+import com.pawar.todo.register.entity.UserRolePermissions;
+import com.pawar.todo.register.entity.UserRolePermissionsId;
 import com.pawar.todo.register.exception.RoleDeletionException;
 import com.pawar.todo.register.exception.UserAlreadyExistException;
 import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.repository.RoleRepository;
 import com.pawar.todo.register.repository.UserRepository;
-import com.pawar.todo.register.repository.UserRoleRepository;
+import com.pawar.todo.register.repository.UserRolePermissionsRepository;
 
 @Service
 public class UserService {
@@ -48,7 +50,7 @@ public class UserService {
 	private KafkaTemplate<String, String> userRoleKafkaTemplate;
 
 	@Autowired
-	private UserRoleRepository userRoleRepository;
+	private UserRolePermissionsRepository userRolePermissionsRepository;
 
 	@Autowired
 	private UserRepository userRepository;
@@ -74,6 +76,9 @@ public class UserService {
 		user.setUsername(userDto.getUsername());
 		user.setEmail(userDto.getEmail());
 		user.setPasswordHash(passwordEncoder.encode(userDto.getpasswordHash()));
+		user.setFirstName(userDto.getFirstName());
+		user.setMiddleName(userDto.getMiddleName());
+		user.setLastName(userDto.getLastName());
 		user.setCreatedAt(Date.valueOf(LocalDate.now()));
 		user.setUpdatedAt(Date.valueOf(LocalDate.now()));
 		Set<Role> roles = roleDtos.stream().map(this::findRoleByName).collect(Collectors.toSet());
@@ -96,39 +101,63 @@ public class UserService {
 		logger.info("User Role: {}", userDto.getRoles());
 		logger.info("User {} assigned with default role successfully", userDto.getUsername());
 
-		UserRoleId userRoleId = new UserRoleId(getRoleIdFromRoleDtos(roleDtos), user.getUser_id());
-		logger.info("user rold id : " + userRoleId);
-//		Optional<UserRole> userRoles = userRoleRepository.findById(userRoleId);
-		UserRole userRole = userRoleRepository.findUserRolesById(userRoleId.getRoleId(), userRoleId.getUserId());
+//		UserRolePermissionsId userRoleId = new UserRolePermissionsId(getRoleIdFromRoleDtos(roleDtos), user.getUser_id(),
+//				getPermissionIdFromPermissionDtos(roleDtos));
+//		logger.info("user rold id : " + userRoleId);
+//		Optional<UserRole> userRoles = userRolePermissionsRepository.findById(userRoleId);
+//		UserRolePermissions userRole = userRolePermissionsRepository.findUserRolesById(userRoleId.getRoleId(),
+//				userRoleId.getUserId());
 
 		String TO_DO_NEW_USER = "TO.DO.NEW.USER";
-		String TO_DO_NEW_USER_ROLE = "TO.DO.NEW.USER.ROLE";
+//		String TO_DO_NEW_USER_ROLE = "TO.DO.NEW.USER.ROLE";
 
 		/*
 		 * Publish new user info to TO.DO.NEW.USER Topic
 		 */
 
-		logger.info("User Roles : {} ", userRole.toString());
+//		logger.info("User Roles : {} ", userRole.toString());
 //		ProducerRecord<String, String> new_user_event = new ProducerRecord<>(TO_DO_NEW_USER, user.toString());
 //		logger.info("NEW USER EVENT : {}", new_user_event);
 		Gson gson = new Gson();
 //	    String jsonString = gson.toJson(user.toString());	
 		ObjectMapper objectMapper = new ObjectMapper();
 		String user_json = objectMapper.writeValueAsString(user);
-		String user_roles_json = objectMapper.writeValueAsString(userRole);
+//		String user_roles_json = objectMapper.writeValueAsString(userRole);
 
 		logger.info("json user event : {}", user_json);
-		logger.info("json user roles event : {}", user_roles_json);
+//		logger.info("json user roles event : {}", user_roles_json);
 		userKafkaTemplate.send(TO_DO_NEW_USER, user_json);
 		logger.info("New User message published to Topic : {}", TO_DO_NEW_USER);
 
 		// Replace "TO.DO.NEW.USER.ROLE" with your actual topic name
-		ProducerRecord<String, String> new_user_role_event = new ProducerRecord<>(TO_DO_NEW_USER_ROLE, user_roles_json);
-		logger.info("NEW USER ROLE EVENT : {}", new_user_role_event);
-		userRoleKafkaTemplate.send(new_user_role_event);
-		logger.info("New User Role message published to Topic : {}", TO_DO_NEW_USER_ROLE);
+//		ProducerRecord<String, String> new_user_role_event = new ProducerRecord<>(TO_DO_NEW_USER_ROLE, user_roles_json);
+//		logger.info("NEW USER ROLE EVENT : {}", new_user_role_event);
+//		userRoleKafkaTemplate.send(new_user_role_event);
+//		logger.info("New User Role message published to Topic : {}", TO_DO_NEW_USER_ROLE);
 
 		return registeredUser;
+	}
+
+	private Integer getPermissionIdFromPermissionDtos(Set<RoleDto> roleDtos) {
+		logger.info("RoleDtos : {}", roleDtos.toString());
+		for (RoleDto roleDto : roleDtos) {
+			Set<PermissionDto> permissionDtos = roleDto.getPermissions();
+			if (permissionDtos != null) {
+				for (PermissionDto permissionDto : permissionDtos) {
+					Integer permissionId = permissionDto.getId();
+					logger.info("permissionId : {}", permissionId);
+
+					if (permissionId != null) {
+						logger.info("permissionId is not null : {}", permissionId);
+						return permissionId;
+					}
+				}
+			}
+			else {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	private Integer getRoleIdFromRoleDtos(Set<RoleDto> roleDtos) {

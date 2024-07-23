@@ -67,11 +67,14 @@ public class UserRegistrationController {
 			try {
 				User registered = userService.registerNewUserAccount(userDto, roleDtos);
 				VerificationToken token = verificationTokenService.createVerificationToken(registered);
-				mailService.sendMail(registered.getEmail(), "Registration Confirmation", "To confirm your e-mail address, please click the link below:\n" + "http://192.168.29.137:8082/api/confirm?token=" + token.getToken());
+				mailService.sendMail(registered.getEmail(), "Registration Confirmation", "To confirm your e-mail address, please click the link below:\n" + "http://"+InetAddress.getLocalHost().getHostAddress()+":8082/api/confirm?token=" + token.getToken());
 				logger.info("User registered successfully with username: {}", userDto.getUsername());
 				return new ResponseEntity<>(registered, HttpStatus.CREATED);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnknownHostException e) {
+				
 				e.printStackTrace();
 			}
 			

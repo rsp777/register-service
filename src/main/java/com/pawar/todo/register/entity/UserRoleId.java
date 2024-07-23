@@ -6,13 +6,12 @@ import java.util.Objects;
 public class UserRoleId implements Serializable {
 	private Integer roleId;
 	private Long userId;
-	
 
 	public UserRoleId() {
 		// TODO Auto-generated constructor stub
 	}
 
-	public UserRoleId(Integer roleId,Long userId) {
+	public UserRoleId(Integer roleId, Long userId) {
 
 		this.userId = userId;
 		this.roleId = roleId;
@@ -33,9 +32,7 @@ public class UserRoleId implements Serializable {
 	public void setRoleId(Integer roleId) {
 		this.roleId = roleId;
 	}
-	
-	
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(roleId, userId);
@@ -58,5 +55,4 @@ public class UserRoleId implements Serializable {
 		return "UserRoleId [roleId=" + roleId + ", userId=" + userId + "]";
 	}
 
-	
 }
