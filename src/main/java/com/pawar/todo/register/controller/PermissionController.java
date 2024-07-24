@@ -32,78 +32,78 @@ import com.pawar.todo.register.service.RoleService;
 @RequestMapping("/register-service")
 public class PermissionController {
 
-private static final Logger logger = LoggerFactory.getLogger(PermissionController.class);
-    
-    @Autowired
-    private PermissionService permissionService;
+	private static final Logger logger = LoggerFactory.getLogger(PermissionController.class);
 
-    @PostMapping("/permission/add")
-    public ResponseEntity<Permission> createPermission(@Valid @RequestBody PermissionDto permissionDto) {
-        try {
-        	Permission permission = permissionService.savePermission(permissionDto);
-            logger.info("Permission created successfully with ID: {}", permission.getId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(permission);
-        } catch (Exception e) {
-            logger.error("Failed to create role", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission creation failed", e);
-        }
-    }
+	@Autowired
+	private PermissionService permissionService;
 
-    @PutMapping("/permission/{permissionId}")
-    public ResponseEntity<?> updateRole(@PathVariable Integer permissionId, @Valid @RequestBody PermissionDto permissionDto) {
+	@PostMapping("/permission/add")
+	public ResponseEntity<Permission> createPermission(@Valid @RequestBody PermissionDto permissionDto) {
+		try {
+			Permission permission = permissionService.savePermission(permissionDto);
+			logger.info("Permission created successfully with ID: {}", permission.getId());
+			return ResponseEntity.status(HttpStatus.CREATED).body(permission);
+		} catch (Exception e) {
+			logger.error("Failed to create permission", e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission creation failed", e);
+		}
+	}
+
+	@GetMapping("/permissions")
+	public ResponseEntity<List<Permission>> getAllPermissions() {
+		try {
+			List<Permission> permissions = permissionService.getAllPermissions();
+			logger.info("Retrieved all permissions successfully");
+			return ResponseEntity.ok(permissions);
+		} catch (Exception e) {
+			logger.error("Failed to retrieve roles", e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve permissions", e);
+		}
+	}
+
+	@PutMapping("/permission/{permissionId}")
+	public ResponseEntity<?> updateRole(@PathVariable Integer permissionId,
+			@Valid @RequestBody PermissionDto permissionDto) {
+		try {
+			Permission permission = permissionService.updatePermission(permissionId, permissionDto);
+			logger.info("Permission updated successfully with ID: {}", permission.getId());
+			return ResponseEntity.ok("Permission updated successfully");
+		} catch (PermissionNotFoundException e) {
+			logger.error("Permission not found with ID: {}", permissionId, e);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+		} catch (Exception e) {
+			logger.error("Failed to update permission with ID: {}", permissionId, e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission update failed", e);
+		}
+	}
+	
+  @GetMapping("/permission/{permissionId}")
+  public ResponseEntity<Permission> getRoleById(@PathVariable Integer permissionId) {
+      try {
+    	  Permission permission = permissionService.getPermissionById(permissionId);
+          logger.info("Permission retrieved successfully with ID: {}", permission.getId());
+          return ResponseEntity.ok(permission);
+      } catch (PermissionNotFoundException e) {
+          logger.error("Permission not found with ID: {}", permissionId, e);
+          throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
+      } catch (Exception e) {
+          logger.error("Failed to retrieve permission with ID: {}", permissionId, e);
+          throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission retrieval failed", e);
+      }
+  }
+
+    @DeleteMapping("/permission/{permissionId}")
+    public ResponseEntity<?> deletePermission(@PathVariable Integer permissionId) {
         try {
-        	Permission permission = permissionService.updatePermission(permissionId, permissionDto);
-            logger.info("Permission updated successfully with ID: {}", permission.getId());
-            return ResponseEntity.ok("Permission updated successfully");
+        	permissionService.deletePermission(permissionId);
+            logger.info("Permission deleted successfully with ID: {}", permissionId);
+            return ResponseEntity.ok().build();
         } catch (PermissionNotFoundException e) {
             logger.error("Permission not found with ID: {}", permissionId, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
         } catch (Exception e) {
-            logger.error("Failed to update permission with ID: {}", permissionId, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission update failed", e);
+            logger.error("Failed to delete permission with ID: {}", permissionId, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Permission deletion failed", e);
         }
     }
-//
-//    @DeleteMapping("/roles/{roleId}")
-//    public ResponseEntity<?> deleteRole(@PathVariable Integer roleId) {
-//        try {
-//            roleService.deleteRole(roleId);
-//            logger.info("Role deleted successfully with ID: {}", roleId);
-//            return ResponseEntity.ok().build();
-//        } catch (RoleNotFoundException e) {
-//            logger.error("Role not found with ID: {}", roleId, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
-//        } catch (Exception e) {
-//            logger.error("Failed to delete role with ID: {}", roleId, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Role deletion failed", e);
-//        }
-//    }
-
-    @GetMapping("/permissions")
-    public ResponseEntity<List<Permission>> getAllPermissions() {
-        try {
-            List<Permission> permissions = permissionService.getAllPermissions();
-            logger.info("Retrieved all permissions successfully");
-            return ResponseEntity.ok(permissions);
-        } catch (Exception e) {
-            logger.error("Failed to retrieve roles", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve permissions", e);
-        }
-    }
-
-//    @GetMapping("/roles/{roleId}")
-//    public ResponseEntity<Role> getRoleById(@PathVariable Integer roleId) {
-//        try {
-//            Role role = roleService.getRoleById(roleId);
-//            logger.info("Role retrieved successfully with ID: {}", role.getRole_id());
-//            return ResponseEntity.ok(role);
-//        } catch (RoleNotFoundException e) {
-//            logger.error("Role not found with ID: {}", roleId, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
-//        } catch (Exception e) {
-//            logger.error("Failed to retrieve role with ID: {}", roleId, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Role retrieval failed", e);
-//        }
-//    }
-	
 }

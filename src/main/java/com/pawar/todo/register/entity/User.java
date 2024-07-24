@@ -4,6 +4,9 @@ import java.sql.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -42,9 +45,11 @@ public class User {
 	@Column(name = "last_name")
 	private String lastName;
 
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "created_at")
 	private Date createdAt;
 
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "updated_at")
 	private Date updatedAt;
 
@@ -59,6 +64,7 @@ public class User {
 //    )
 //    private Set<Role> roles = new HashSet<>();
 
+	@JsonInclude(value = Include.CUSTOM)
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "user_roles", // This should be your association table
 			joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))

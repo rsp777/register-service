@@ -32,6 +32,7 @@ import com.pawar.todo.register.entity.User;
 
 import com.pawar.todo.register.entity.UserRolePermissions;
 import com.pawar.todo.register.entity.UserRolePermissionsId;
+import com.pawar.todo.register.events.UserDeleteEvent;
 import com.pawar.todo.register.exception.RoleDeletionException;
 import com.pawar.todo.register.exception.UserAlreadyExistException;
 import com.pawar.todo.register.exception.UserNotFoundException;
@@ -60,6 +61,13 @@ public class UserService {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	private final ObjectMapper objectMapper;
+
+	public UserService() {
+		objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+	}
 
 	@Transactional
 	public User registerNewUserAccount(UserDto userDto, Set<RoleDto> roleDtos)
@@ -120,7 +128,6 @@ public class UserService {
 //		logger.info("NEW USER EVENT : {}", new_user_event);
 		Gson gson = new Gson();
 //	    String jsonString = gson.toJson(user.toString());	
-		ObjectMapper objectMapper = new ObjectMapper();
 		String user_json = objectMapper.writeValueAsString(user);
 //		String user_roles_json = objectMapper.writeValueAsString(userRole);
 
@@ -138,6 +145,51 @@ public class UserService {
 		return registeredUser;
 	}
 
+	@Transactional
+	public User updateUser(Long userId, @Valid UserDto userDto)
+			throws UserNotFoundException, RoleNotFoundException, JsonProcessingException {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RoleNotFoundException("User not found with ID: " + userId));
+		user.setUsername(userDto.getUsername());
+		user.setPasswordHash(userDto.getpasswordHash());
+		user.setEmail(userDto.getEmail());
+		
+		User updatedUser = userRepository.save(user);
+		logger.info("User updated successfully with ID: {}", updatedUser.getUser_id());
+
+		String TO_DO_UPDATE_USER = "TO.DO.UPDATE.USER";
+
+		Gson gson = new Gson();
+		String updated_user_json = objectMapper.writeValueAsString(updatedUser);
+
+		logger.info("json updated user event : {}", updated_user_json);
+		userKafkaTemplate.send(TO_DO_UPDATE_USER, updated_user_json);
+		logger.info("Updated User message published to Topic : {}", TO_DO_UPDATE_USER);
+
+		return updatedUser;
+	}
+
+	@Transactional
+	public void deleteUser(Long userId) throws UserNotFoundException, RoleDeletionException {
+		try {
+			userRepository.deleteById(userId);
+			logger.info("User deleted successfully with ID: {}", userId);
+
+			String TO_DO_DELETE_USER = "TO.DO.DELETE.USER";
+			UserDeleteEvent deleteEvent = new UserDeleteEvent(userId);
+			Gson gson = new Gson();
+			String delete_user_json = objectMapper.writeValueAsString(deleteEvent);
+			logger.info("DELETE USER EVENT : {}", delete_user_json);
+
+			userKafkaTemplate.send(TO_DO_DELETE_USER, delete_user_json);
+			logger.info("Delete User message published to Topic : {}", TO_DO_DELETE_USER);
+
+		} catch (Exception e) {
+			logger.error("Error occurred while deleting user with ID: {}", userId, e);
+			throw new RoleDeletionException("Could not delete user with ID: " + userId, e);
+		}
+	}
+
 	private Integer getPermissionIdFromPermissionDtos(Set<RoleDto> roleDtos) {
 		logger.info("RoleDtos : {}", roleDtos.toString());
 		for (RoleDto roleDto : roleDtos) {
@@ -152,8 +204,7 @@ public class UserService {
 						return permissionId;
 					}
 				}
-			}
-			else {
+			} else {
 				return null;
 			}
 		}
@@ -194,35 +245,6 @@ public class UserService {
 		// TODO Auto-generated method stub
 		return userRepository.findById(userId)
 				.orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
-	}
-
-	@Transactional
-	public User updateUser(Long userId, @Valid UserDto userDto) throws UserNotFoundException, RoleNotFoundException {
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RoleNotFoundException("User not found with ID: " + userId));
-		user.setUsername(userDto.getUsername());
-		user.setPasswordHash(userDto.getpasswordHash());
-		user.setEmail(userDto.getEmail());
-
-		Set<Role> roles = userDto.getRoles().stream().map(roleDto -> new Role(roleDto.getRole_id(), roleDto.getName()))
-				.collect(Collectors.toSet());
-
-		user.setRoles(roles);
-
-		User updatedUser = userRepository.save(user);
-		logger.info("User updated successfully with ID: {}", updatedUser.getUser_id());
-		return updatedUser;
-	}
-
-	@Transactional
-	public void deleteUser(Long userId) throws UserNotFoundException, RoleDeletionException {
-		try {
-			userRepository.deleteById(userId);
-			logger.info("User deleted successfully with ID: {}", userId);
-		} catch (Exception e) {
-			logger.error("Error occurred while deleting user with ID: {}", userId, e);
-			throw new RoleDeletionException("Could not delete user with ID: " + userId, e);
-		}
 	}
 
 	@Transactional

@@ -11,9 +11,14 @@ import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.pawar.inventory.model.Inventory;
 import com.pawar.todo.dto.RoleDto;
 import com.pawar.todo.dto.UserDto;
@@ -44,16 +49,24 @@ public class RolePermissionService {
 
 	@Autowired
 	private PermissionRepository permissionRepository;
-	
+
+	@Autowired
+	private KafkaTemplate<String, String> rolePermissionkafkaTemplate;
+
+	private final ObjectMapper objectMapper;
+
 	private EntityManager entityManager;
-	
+
 	public RolePermissionService(EntityManager entityManager) {
 		this.entityManager = entityManager;
+		this.objectMapper = new ObjectMapper();
+		this.objectMapper.registerModule(new JavaTimeModule());
 	}
 
 	@Transactional
-	public void assignPermissionsToRoles(Integer role_id,Integer permission_id) throws RoleNotFoundException, PermissionNotFoundException {
-		
+	public void assignPermissionsToRoles(Integer role_id, Integer permission_id) throws RoleNotFoundException,
+			PermissionNotFoundException, JsonProcessingException, InvalidDefinitionException {
+
 		Role role = roleRepository.findById(role_id)
 				.orElseThrow(() -> new RoleNotFoundException("Role not found with ID: " + role_id));
 
@@ -63,9 +76,45 @@ public class RolePermissionService {
 		Set<Permission> assignedPermissions = new HashSet<>(role.getPermissions());
 		assignedPermissions.add(assignedPermission);
 		role.setPermissions(assignedPermissions);
-		roleRepository.save(role);
+		Role savedRole = roleRepository.save(role);
 
-		logger.info("Permissions assigned successfully to Role ID: {}", role_id);
+		logger.info("Updated Role : {} ", savedRole);
+
+		String TO_DO_ASSIGN_ROLE_PERMISSION = "TO.DO.ASSIGN.ROLE.PERMISSION";
+		String role_permission_json = objectMapper.writeValueAsString(savedRole);
+
+		logger.info("UPDATED ROLE PERMISSION EVENT : {}", role_permission_json);
+		rolePermissionkafkaTemplate.send(TO_DO_ASSIGN_ROLE_PERMISSION, role_permission_json);
+
+		logger.info("RolePermission message published to Topic : {}", TO_DO_ASSIGN_ROLE_PERMISSION);
+
+		logger.info("Permissions {} assigned successfully to Role ID: {}", assignedPermission.getName(), role_id);
+
+	}
+
+	@Transactional
+	public void unassignPermissionToRole(Integer role_id, Integer permission_id)
+			throws RoleNotFoundException, PermissionNotFoundException, JsonProcessingException {
+		Role role = roleRepository.findById(role_id)
+				.orElseThrow(() -> new RoleNotFoundException("Role not found with id: " + role_id));
+
+		Permission permission = permissionRepository.findById(permission_id)
+				.orElseThrow(() -> new PermissionNotFoundException("Permission not found with ID: " + permission_id));
+
+		role.getPermissions().removeIf(p -> p.getId().equals(permission_id));
+		Role savedRole = roleRepository.save(role);
+
+		logger.info("Updated Role : {} ", savedRole);
+
+		String TO_DO_UNASSIGN_ROLE_PERMISSION = "TO.DO.UNASSIGN.ROLE.PERMISSION";
+		String role_permission_json = objectMapper.writeValueAsString(savedRole);
+
+		logger.info("NEW ROLE PERMISSION EVENT : {}", role_permission_json);
+		rolePermissionkafkaTemplate.send(TO_DO_UNASSIGN_ROLE_PERMISSION, role_permission_json);
+
+		logger.info("RolePermission message published to Topic : {}", TO_DO_UNASSIGN_ROLE_PERMISSION);
+
+		logger.info("Permission ID: {} removed from user ID: {}", role_id, permission_id);
 	}
 
 	@Transactional(readOnly = true)
@@ -95,12 +144,12 @@ public class RolePermissionService {
 	@Transactional
 	public void assignPermissionToRole(Integer role_id, Integer permission_id)
 			throws RoleNotFoundException, PermissionNotFoundException {
-		
+
 		Session currentSession = entityManager.unwrap(Session.class);
-		Query<UserRolePermissions> query = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0", UserRolePermissions.class);
+		Query<UserRolePermissions> query = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0",
+				UserRolePermissions.class);
 		query.executeUpdate();
-		
-		
+
 		Role role = roleRepository.findById(role_id)
 				.orElseThrow(() -> new RoleNotFoundException("Role not found with id: " + role_id));
 
@@ -112,7 +161,8 @@ public class RolePermissionService {
 
 		role.setPermissions(assignedPermissions);
 		roleRepository.save(role);
-		Query<UserRolePermissions> query2 = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1", UserRolePermissions.class);
+		Query<UserRolePermissions> query2 = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1",
+				UserRolePermissions.class);
 		query2.executeUpdate();
 		logger.info("Permissions assigned successfully to Role ID: {}", permission_id);
 

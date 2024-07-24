@@ -6,7 +6,9 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,7 +32,8 @@ public class Role {
 	@Column(nullable = false, unique = true)
 	private String name;
 
-	@OneToMany(fetch = FetchType.EAGER)
+	@JsonInclude(value = Include.CUSTOM)
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "roles_permissions", // This should be your association table
 			joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
 	private Set<Permission> permissions = new HashSet<>();
@@ -43,23 +46,23 @@ public class Role {
 //	})
 //	private Set<Permission> permissions = new HashSet<>();
 	
-	@JsonIgnore
+	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
 	@JsonProperty("created_dttm")
 	@Column(name = "created_dttm")
 	private LocalDateTime createdDttm;
 
-	@JsonIgnore
+	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	@JsonProperty("created_dttm")
+	@JsonProperty("last_updated_dttm")
 	@Column(name = "last_updated_dttm")
 	private LocalDateTime lastUpdatedDttm;
 
-	@JsonIgnore
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "created_source")
 	private String createdSource;
 
-	@JsonIgnore
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "last_updated_source")
 	private String lastUpdatedSource;
 

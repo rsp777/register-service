@@ -7,11 +7,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.pawar.todo.register.exception.PermissionNotFoundException;
 import com.pawar.todo.register.exception.RoleAssignmentException;
 import com.pawar.todo.register.service.RolePermissionService;
@@ -26,8 +30,8 @@ public class RolePermissionsController {
 	private RolePermissionService rolePermissionService;
 
 	// Assign roles to a user
-	@PostMapping("/roles/{roleId}/permissions/{permissionId}")
-	public ResponseEntity<?> assignRolesToUser(@PathVariable Integer roleId, @PathVariable Integer permissionId) {
+	@PostMapping("/assign/roles/{roleId}/permissions/{permissionId}")
+	public ResponseEntity<?> assignPermissionsToRole(@PathVariable Integer roleId, @PathVariable Integer permissionId) {
 		try {
 			try {
 
@@ -36,9 +40,13 @@ public class RolePermissionsController {
 				ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found : {}" + e.getMessage());
 			} catch (PermissionNotFoundException e) {
 				ResponseEntity.status(HttpStatus.NOT_FOUND).body("Permission not found : {}" + e.getMessage());
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+				ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+						.body("Exception in Json Processing : {}" + e.getMessage());
 			}
 			logger.info("Permissions assigned successfully to Role ID: {}", roleId);
-			return ResponseEntity.ok("Permissions assigned successfully.");
+			return ResponseEntity.ok("Permissions assigned successfully to Role ");
 
 		} catch (IllegalArgumentException e) {
 
@@ -48,6 +56,35 @@ public class RolePermissionsController {
 
 			logger.error("Permission assignment failed: {}", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Role assignment failed.");
+		}
+	}
+	
+	@DeleteMapping("/unassign/roles/{roleId}/permissions/{permissionId}")
+	public ResponseEntity<?> unassignPermissionsToRole(@PathVariable Integer roleId, @PathVariable Integer permissionId) {
+		try {
+			try {
+
+				rolePermissionService.unassignPermissionToRole(roleId, permissionId);
+			} catch (RoleNotFoundException e) {
+				ResponseEntity.status(HttpStatus.NOT_FOUND).body("Role not found : {}" + e.getMessage());
+			} catch (PermissionNotFoundException e) {
+				ResponseEntity.status(HttpStatus.NOT_FOUND).body("Permission not found : {}" + e.getMessage());
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+				ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+						.body("Exception in Json Processing : {}" + e.getMessage());
+			}
+			logger.info("Permissions unassigned successfully to Role ID: {}", roleId);
+			return ResponseEntity.ok("Permissions unassigned successfully");
+
+		} catch (IllegalArgumentException e) {
+
+			logger.error("Error unassigning Permissions: {}", e.getMessage());
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (RoleAssignmentException e) {
+
+			logger.error("Permission unassignment failed: {}", e.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Permission unassignment failed.");
 		}
 	}
 
