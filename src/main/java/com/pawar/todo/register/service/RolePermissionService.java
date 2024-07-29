@@ -26,13 +26,11 @@ import com.pawar.todo.dto.UserRolesDto;
 import com.pawar.todo.register.entity.Permission;
 import com.pawar.todo.register.entity.Role;
 import com.pawar.todo.register.entity.User;
-import com.pawar.todo.register.entity.UserRolePermissions;
 import com.pawar.todo.register.exception.PermissionNotFoundException;
 import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.repository.PermissionRepository;
 import com.pawar.todo.register.repository.RoleRepository;
 import com.pawar.todo.register.repository.UserRepository;
-import com.pawar.todo.register.repository.UserRolePermissionsRepository;
 
 import jakarta.persistence.EntityManager;
 
@@ -141,30 +139,4 @@ public class RolePermissionService {
 		logger.info("Role ID: {} removed from user ID: {}", roleId, userId);
 	}
 
-	@Transactional
-	public void assignPermissionToRole(Integer role_id, Integer permission_id)
-			throws RoleNotFoundException, PermissionNotFoundException {
-
-		Session currentSession = entityManager.unwrap(Session.class);
-		Query<UserRolePermissions> query = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0",
-				UserRolePermissions.class);
-		query.executeUpdate();
-
-		Role role = roleRepository.findById(role_id)
-				.orElseThrow(() -> new RoleNotFoundException("Role not found with id: " + role_id));
-
-		Permission assignedPermission = permissionRepository.findById(permission_id)
-				.orElseThrow(() -> new PermissionNotFoundException("Permission not found with id: " + permission_id));
-
-		Set<Permission> assignedPermissions = new HashSet<>(role.getPermissions());
-		assignedPermissions.add(assignedPermission);
-
-		role.setPermissions(assignedPermissions);
-		roleRepository.save(role);
-		Query<UserRolePermissions> query2 = currentSession.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1",
-				UserRolePermissions.class);
-		query2.executeUpdate();
-		logger.info("Permissions assigned successfully to Role ID: {}", permission_id);
-
-	}
 }

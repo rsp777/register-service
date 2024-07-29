@@ -1,11 +1,15 @@
 package com.pawar.todo.register.entity;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.pawar.todo.dto.RoleDto;
+import com.pawar.todo.dto.UserDto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,23 +29,29 @@ import jakarta.persistence.UniqueConstraint;
 public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long user_id;
+	private Long userId;
 
-	@Column(unique = true, nullable = false)
+	@JsonInclude(value = Include.CUSTOM)
+	@Column(unique = true, nullable = true)
 	private String username;
 
-	@Column(unique = true, nullable = false)
+	@JsonInclude(value = Include.CUSTOM)
+	@Column(unique = true, nullable = true)
 	private String email;
 
-	@Column(name = "password_hash", nullable = false)
+	@JsonInclude(value = Include.CUSTOM)
+	@Column(name = "password_hash", nullable = true)
 	private String passwordHash;
 
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "first_name")
 	private String firstName;
 
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "middle_name")
 	private String middleName;
 
+	@JsonInclude(value = Include.CUSTOM)
 	@Column(name = "last_name")
 	private String lastName;
 
@@ -77,7 +87,7 @@ public class User {
 	public User(Long user_id, String username, String email, String passwordHash, String firstName, String middleName,
 			String lastName, Date createdAt, Date updatedAt, Boolean loggedIn, Set<Role> roles) {
 		super();
-		this.user_id = user_id;
+		this.userId = user_id;
 		this.username = username;
 		this.email = email;
 		this.passwordHash = passwordHash;
@@ -100,11 +110,11 @@ public class User {
 	}
 
 	public Long getUser_id() {
-		return user_id;
+		return userId;
 	}
 
 	public void setUser_id(Long user_id) {
-		this.user_id = user_id;
+		this.userId = user_id;
 	}
 
 	public String getUsername() {
@@ -189,10 +199,50 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User [user_id=" + user_id + ", username=" + username + ", email=" + email + ", passwordHash="
+		return "User [user_id=" + userId + ", username=" + username + ", email=" + email + ", passwordHash="
 				+ passwordHash + ", firstName=" + firstName + ", middleName=" + middleName + ", lastName=" + lastName
 				+ ", createdAt=" + createdAt + ", updatedAt=" + updatedAt + ", loggedIn=" + loggedIn + ", userRoles="
 				+ roles + "]";
+	}
+
+	public List<UserDto> convertUserEntityToDto(List<User> users) {
+			
+		List<UserDto> userDtos = new ArrayList<>();
+		UserDto userDto = new UserDto();
+		
+		for (User user : users) {
+			userDto.setUser_id(user.getUser_id());
+			userDto.setUsername(user.getUsername());
+			userDto.setEmail(user.getEmail());
+			userDto.setpasswordHash(user.getPasswordHash());
+			userDto.setFirstName(user.getFirstName());
+			userDto.setMiddleName(user.getMiddleName());
+			userDto.setLastName(user.getLastName());
+			userDto.setCreatedAt(user.getCreatedAt());
+			userDto.setUpdatedAt(user.getUpdatedAt());
+			userDto.setLoggedIn(user.getLoggedIn());
+			userDto.setRoles(convertRolesEntityToDto(user.getRoles()));
+			userDtos.add(userDto); 
+		}
+		return userDtos;
+	}
+	
+	public Set<RoleDto> convertRolesEntityToDto(Set<Role> roles) {
+
+		Set<RoleDto> roleDtos = new HashSet<>();
+		RoleDto roleDto = new RoleDto();
+		for (Role role : roles) {
+			roleDto.setRole_id(role.getRole_id());
+			roleDto.setName(role.getName());
+			roleDto.setPermissions(role.convertPermissionEntityToDto(role.getPermissions()));
+			roleDto.setCreatedDttm(role.getCreatedDttm());
+			roleDto.setLastUpdatedDttm(role.getLastUpdatedDttm());
+			roleDto.setCreatedSource(role.getCreatedSource());
+			roleDto.setLastUpdatedSource(role.getLastUpdatedSource());
+			roleDtos.add(roleDto);
+		}
+		return roleDtos;
+
 	}
 
 }

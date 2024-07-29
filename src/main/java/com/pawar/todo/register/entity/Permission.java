@@ -37,14 +37,14 @@ public class Permission {
 
 	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	@JsonProperty("created_dttm")
+	@JsonProperty("createdDttm")
 	@Column(name = "created_dttm")
 	private LocalDateTime createdDttm;
 
 //	@JsonIgnore
 	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	@JsonProperty("last_updated_dttm")
+	@JsonProperty("lastUpdatedDttm")
 	@Column(name = "last_updated_dttm")
 	private LocalDateTime lastUpdatedDttm;
 

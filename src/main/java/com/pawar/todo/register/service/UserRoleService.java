@@ -25,13 +25,11 @@ import com.pawar.todo.dto.UserRolesDto;
 import com.pawar.todo.register.entity.Permission;
 import com.pawar.todo.register.entity.Role;
 import com.pawar.todo.register.entity.User;
-import com.pawar.todo.register.entity.UserRolePermissions;
 import com.pawar.todo.register.exception.PermissionNotFoundException;
 import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.repository.PermissionRepository;
 import com.pawar.todo.register.repository.RoleRepository;
 import com.pawar.todo.register.repository.UserRepository;
-import com.pawar.todo.register.repository.UserRolePermissionsRepository;
 
 import jakarta.persistence.EntityManager;
 

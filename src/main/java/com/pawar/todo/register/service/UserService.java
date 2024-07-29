@@ -11,11 +11,14 @@ import java.util.stream.Collectors;
 import javax.management.relation.RoleNotFoundException;
 import javax.validation.Valid;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,15 +33,13 @@ import com.pawar.todo.dto.UserDto;
 import com.pawar.todo.register.entity.Role;
 import com.pawar.todo.register.entity.User;
 
-import com.pawar.todo.register.entity.UserRolePermissions;
-import com.pawar.todo.register.entity.UserRolePermissionsId;
 import com.pawar.todo.register.events.UserDeleteEvent;
 import com.pawar.todo.register.exception.RoleDeletionException;
 import com.pawar.todo.register.exception.UserAlreadyExistException;
 import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.repository.RoleRepository;
 import com.pawar.todo.register.repository.UserRepository;
-import com.pawar.todo.register.repository.UserRolePermissionsRepository;
+
 
 @Service
 public class UserService {
@@ -51,9 +52,6 @@ public class UserService {
 	private KafkaTemplate<String, String> userRoleKafkaTemplate;
 
 	@Autowired
-	private UserRolePermissionsRepository userRolePermissionsRepository;
-
-	@Autowired
 	private UserRepository userRepository;
 
 	@Autowired
@@ -63,6 +61,8 @@ public class UserService {
 	private PasswordEncoder passwordEncoder;
 
 	private final ObjectMapper objectMapper;
+
+	private static final String TO_DO_LOGGED_IN_USER = "TO.DO.LOGGED.IN.USER";
 
 	public UserService() {
 		objectMapper = new ObjectMapper();
@@ -153,7 +153,7 @@ public class UserService {
 		user.setUsername(userDto.getUsername());
 		user.setPasswordHash(userDto.getpasswordHash());
 		user.setEmail(userDto.getEmail());
-		
+
 		User updatedUser = userRepository.save(user);
 		logger.info("User updated successfully with ID: {}", updatedUser.getUser_id());
 
@@ -275,5 +275,30 @@ public class UserService {
 		return userRepository.findByUsername(userName)
 				.orElseThrow(() -> new UserNotFoundException("User not found with userName: " + userName));
 
+	}
+
+	@KafkaListener(topics = TO_DO_LOGGED_IN_USER)
+	public void userListener(ConsumerRecord<String, String> consumerRecord, Acknowledgment ack) {
+
+		try {
+			String key = consumerRecord.key();
+			String value = consumerRecord.value();
+			int partition = consumerRecord.partition();
+			User user = objectMapper.readValue(value, User.class);
+
+			logger.info("value : {}", value);
+			logger.info("Consumed message : " + user + " with key : " + key + " from partition : " + partition);
+			if (value != null) {
+				userRepository.save(user);
+				logger.info("User logged in to Regiser database : {}", user);
+
+				ack.acknowledge();
+			} else {
+				logger.warn("Received null value from Kafka topic. {}", TO_DO_LOGGED_IN_USER);
+			}
+		} catch (Exception e) {
+			logger.error("Error processing Kafka message: {}", e.getMessage());
+			// Handle the exception (e.g., log, retry, or skip)
+		}
 	}
 }

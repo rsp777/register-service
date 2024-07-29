@@ -9,6 +9,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.pawar.todo.dto.PermissionDto;
+import com.pawar.todo.dto.RoleDto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -48,13 +50,13 @@ public class Role {
 	
 	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	@JsonProperty("created_dttm")
+	@JsonProperty("createdDttm")
 	@Column(name = "created_dttm")
 	private LocalDateTime createdDttm;
 
 	@JsonInclude(value = Include.CUSTOM)
 	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	@JsonProperty("last_updated_dttm")
+	@JsonProperty("lastUpdatedDttm")
 	@Column(name = "last_updated_dttm")
 	private LocalDateTime lastUpdatedDttm;
 
@@ -92,6 +94,16 @@ public class Role {
 		this.role_id = role_id;
 		this.name = name;
 		this.permissions = permissions;
+	}
+	
+	public Role(RoleDto roleDto) {
+		this.role_id = roleDto.getRole_id();
+		this.name = roleDto.getName();
+		this.permissions = convertPermissionDtoToEntity(roleDto.getPermissions());
+		this.createdDttm = roleDto.getCreatedDttm();
+		this.lastUpdatedDttm = roleDto.getLastUpdatedDttm();
+		this.createdSource = roleDto.getCreatedSource();
+		this.lastUpdatedSource = roleDto.getLastUpdatedSource();
 	}
 
 	public Integer getRole_id() {
@@ -155,6 +167,37 @@ public class Role {
 		return "Role [role_id=" + role_id + ", name=" + name + ", permissions=" + permissions + ", createdDttm="
 				+ createdDttm + ", lastUpdatedDttm=" + lastUpdatedDttm + ", createdSource=" + createdSource
 				+ ", lastUpdatedSource=" + lastUpdatedSource + "]";
+	}
+	
+	public Set<Permission> convertPermissionDtoToEntity(Set<PermissionDto> permissionDtos) {
+
+		Set<Permission> permissions = new HashSet<>();
+
+		for (PermissionDto permissionDto : permissionDtos) {
+
+			Permission permission = new Permission(permissionDto);
+			permissions.add(permission);
+		}
+		return permissions;
+
+	}
+	
+	public Set<PermissionDto> convertPermissionEntityToDto(Set<Permission> permissions) {
+
+		Set<PermissionDto> permissionDtos = new HashSet<>();
+		PermissionDto permissionDto = new PermissionDto();
+
+		for (Permission permission : permissions) {
+			permissionDto.setId(permission.getId());
+			permissionDto.setName(permission.getName());
+			permissionDto.setCreatedDttm(permission.getCreatedDttm());
+			permissionDto.setLastUpdatedDttm(permission.getLastUpdatedDttm());
+			permissionDto.setCreatedSource(permission.getCreatedSource());
+			permissionDto.setLastUpdatedSource(permission.getLastUpdatedSource());
+			permissionDtos.add(permissionDto);
+		}
+		return permissionDtos;
+
 	}
 
 }

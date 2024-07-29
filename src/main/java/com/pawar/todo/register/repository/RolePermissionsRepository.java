@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 
 import com.pawar.todo.register.entity.RolePermissions;
 import com.pawar.todo.register.entity.RolePermissionsId;
-import com.pawar.todo.register.entity.UserRolePermissions;
 
 @Repository
 public interface RolePermissionsRepository extends CrudRepository<RolePermissions, RolePermissionsId> {
