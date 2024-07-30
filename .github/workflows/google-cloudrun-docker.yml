@@ -45,7 +45,8 @@
 name: Build and Deploy to Cloud Run
 
 on:
-  push:
+  #push:
+    workflow_dispatch:
     branches: [ "master" ]
 
 env:
