@@ -11,11 +11,14 @@ import java.util.stream.Collectors;
 import javax.management.relation.RoleNotFoundException;
 import javax.validation.Valid;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,18 +27,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
+import com.pawar.todo.dto.PermissionDto;
 import com.pawar.todo.dto.RoleDto;
 import com.pawar.todo.dto.UserDto;
 import com.pawar.todo.register.entity.Role;
 import com.pawar.todo.register.entity.User;
-import com.pawar.todo.register.entity.UserRole;
-import com.pawar.todo.register.entity.UserRoleId;
+
+import com.pawar.todo.register.events.UserDeleteEvent;
 import com.pawar.todo.register.exception.RoleDeletionException;
 import com.pawar.todo.register.exception.UserAlreadyExistException;
 import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.repository.RoleRepository;
 import com.pawar.todo.register.repository.UserRepository;
-import com.pawar.todo.register.repository.UserRoleRepository;
+
 
 @Service
 public class UserService {
@@ -48,9 +52,6 @@ public class UserService {
 	private KafkaTemplate<String, String> userRoleKafkaTemplate;
 
 	@Autowired
-	private UserRoleRepository userRoleRepository;
-
-	@Autowired
 	private UserRepository userRepository;
 
 	@Autowired
@@ -58,6 +59,15 @@ public class UserService {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	private final ObjectMapper objectMapper;
+
+	private static final String TO_DO_LOGGED_IN_USER = "TO.DO.LOGGED.IN.USER";
+
+	public UserService() {
+		objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new JavaTimeModule());
+	}
 
 	@Transactional
 	public User registerNewUserAccount(UserDto userDto, Set<RoleDto> roleDtos)
@@ -74,6 +84,9 @@ public class UserService {
 		user.setUsername(userDto.getUsername());
 		user.setEmail(userDto.getEmail());
 		user.setPasswordHash(passwordEncoder.encode(userDto.getpasswordHash()));
+		user.setFirstName(userDto.getFirstName());
+		user.setMiddleName(userDto.getMiddleName());
+		user.setLastName(userDto.getLastName());
 		user.setCreatedAt(Date.valueOf(LocalDate.now()));
 		user.setUpdatedAt(Date.valueOf(LocalDate.now()));
 		Set<Role> roles = roleDtos.stream().map(this::findRoleByName).collect(Collectors.toSet());
@@ -96,39 +109,106 @@ public class UserService {
 		logger.info("User Role: {}", userDto.getRoles());
 		logger.info("User {} assigned with default role successfully", userDto.getUsername());
 
-		UserRoleId userRoleId = new UserRoleId(getRoleIdFromRoleDtos(roleDtos), user.getUser_id());
-		logger.info("user rold id : " + userRoleId);
-//		Optional<UserRole> userRoles = userRoleRepository.findById(userRoleId);
-		UserRole userRole = userRoleRepository.findUserRolesById(userRoleId.getRoleId(), userRoleId.getUserId());
+//		UserRolePermissionsId userRoleId = new UserRolePermissionsId(getRoleIdFromRoleDtos(roleDtos), user.getUser_id(),
+//				getPermissionIdFromPermissionDtos(roleDtos));
+//		logger.info("user rold id : " + userRoleId);
+//		Optional<UserRole> userRoles = userRolePermissionsRepository.findById(userRoleId);
+//		UserRolePermissions userRole = userRolePermissionsRepository.findUserRolesById(userRoleId.getRoleId(),
+//				userRoleId.getUserId());
 
 		String TO_DO_NEW_USER = "TO.DO.NEW.USER";
-		String TO_DO_NEW_USER_ROLE = "TO.DO.NEW.USER.ROLE";
+//		String TO_DO_NEW_USER_ROLE = "TO.DO.NEW.USER.ROLE";
 
 		/*
 		 * Publish new user info to TO.DO.NEW.USER Topic
 		 */
 
-		logger.info("User Roles : {} ", userRole.toString());
+//		logger.info("User Roles : {} ", userRole.toString());
 //		ProducerRecord<String, String> new_user_event = new ProducerRecord<>(TO_DO_NEW_USER, user.toString());
 //		logger.info("NEW USER EVENT : {}", new_user_event);
 		Gson gson = new Gson();
 //	    String jsonString = gson.toJson(user.toString());	
-		ObjectMapper objectMapper = new ObjectMapper();
 		String user_json = objectMapper.writeValueAsString(user);
-		String user_roles_json = objectMapper.writeValueAsString(userRole);
+//		String user_roles_json = objectMapper.writeValueAsString(userRole);
 
 		logger.info("json user event : {}", user_json);
-		logger.info("json user roles event : {}", user_roles_json);
+//		logger.info("json user roles event : {}", user_roles_json);
 		userKafkaTemplate.send(TO_DO_NEW_USER, user_json);
 		logger.info("New User message published to Topic : {}", TO_DO_NEW_USER);
 
 		// Replace "TO.DO.NEW.USER.ROLE" with your actual topic name
-		ProducerRecord<String, String> new_user_role_event = new ProducerRecord<>(TO_DO_NEW_USER_ROLE, user_roles_json);
-		logger.info("NEW USER ROLE EVENT : {}", new_user_role_event);
-		userRoleKafkaTemplate.send(new_user_role_event);
-		logger.info("New User Role message published to Topic : {}", TO_DO_NEW_USER_ROLE);
+//		ProducerRecord<String, String> new_user_role_event = new ProducerRecord<>(TO_DO_NEW_USER_ROLE, user_roles_json);
+//		logger.info("NEW USER ROLE EVENT : {}", new_user_role_event);
+//		userRoleKafkaTemplate.send(new_user_role_event);
+//		logger.info("New User Role message published to Topic : {}", TO_DO_NEW_USER_ROLE);
 
 		return registeredUser;
+	}
+
+	@Transactional
+	public User updateUser(Long userId, @Valid UserDto userDto)
+			throws UserNotFoundException, RoleNotFoundException, JsonProcessingException {
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new RoleNotFoundException("User not found with ID: " + userId));
+		user.setUsername(userDto.getUsername());
+		user.setPasswordHash(userDto.getpasswordHash());
+		user.setEmail(userDto.getEmail());
+
+		User updatedUser = userRepository.save(user);
+		logger.info("User updated successfully with ID: {}", updatedUser.getUser_id());
+
+		String TO_DO_UPDATE_USER = "TO.DO.UPDATE.USER";
+
+		Gson gson = new Gson();
+		String updated_user_json = objectMapper.writeValueAsString(updatedUser);
+
+		logger.info("json updated user event : {}", updated_user_json);
+		userKafkaTemplate.send(TO_DO_UPDATE_USER, updated_user_json);
+		logger.info("Updated User message published to Topic : {}", TO_DO_UPDATE_USER);
+
+		return updatedUser;
+	}
+
+	@Transactional
+	public void deleteUser(Long userId) throws UserNotFoundException, RoleDeletionException {
+		try {
+			userRepository.deleteById(userId);
+			logger.info("User deleted successfully with ID: {}", userId);
+
+			String TO_DO_DELETE_USER = "TO.DO.DELETE.USER";
+			UserDeleteEvent deleteEvent = new UserDeleteEvent(userId);
+			Gson gson = new Gson();
+			String delete_user_json = objectMapper.writeValueAsString(deleteEvent);
+			logger.info("DELETE USER EVENT : {}", delete_user_json);
+
+			userKafkaTemplate.send(TO_DO_DELETE_USER, delete_user_json);
+			logger.info("Delete User message published to Topic : {}", TO_DO_DELETE_USER);
+
+		} catch (Exception e) {
+			logger.error("Error occurred while deleting user with ID: {}", userId, e);
+			throw new RoleDeletionException("Could not delete user with ID: " + userId, e);
+		}
+	}
+
+	private Integer getPermissionIdFromPermissionDtos(Set<RoleDto> roleDtos) {
+		logger.info("RoleDtos : {}", roleDtos.toString());
+		for (RoleDto roleDto : roleDtos) {
+			Set<PermissionDto> permissionDtos = roleDto.getPermissions();
+			if (permissionDtos != null) {
+				for (PermissionDto permissionDto : permissionDtos) {
+					Integer permissionId = permissionDto.getId();
+					logger.info("permissionId : {}", permissionId);
+
+					if (permissionId != null) {
+						logger.info("permissionId is not null : {}", permissionId);
+						return permissionId;
+					}
+				}
+			} else {
+				return null;
+			}
+		}
+		return null;
 	}
 
 	private Integer getRoleIdFromRoleDtos(Set<RoleDto> roleDtos) {
@@ -168,35 +248,6 @@ public class UserService {
 	}
 
 	@Transactional
-	public User updateUser(Long userId, @Valid UserDto userDto) throws UserNotFoundException, RoleNotFoundException {
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new RoleNotFoundException("User not found with ID: " + userId));
-		user.setUsername(userDto.getUsername());
-		user.setPasswordHash(userDto.getpasswordHash());
-		user.setEmail(userDto.getEmail());
-
-		Set<Role> roles = userDto.getRoles().stream().map(roleDto -> new Role(roleDto.getRole_id(), roleDto.getName()))
-				.collect(Collectors.toSet());
-
-		user.setRoles(roles);
-
-		User updatedUser = userRepository.save(user);
-		logger.info("User updated successfully with ID: {}", updatedUser.getUser_id());
-		return updatedUser;
-	}
-
-	@Transactional
-	public void deleteUser(Long userId) throws UserNotFoundException, RoleDeletionException {
-		try {
-			userRepository.deleteById(userId);
-			logger.info("User deleted successfully with ID: {}", userId);
-		} catch (Exception e) {
-			logger.error("Error occurred while deleting user with ID: {}", userId, e);
-			throw new RoleDeletionException("Could not delete user with ID: " + userId, e);
-		}
-	}
-
-	@Transactional
 	public Set<RoleDto> defaultUserRole() {
 
 		Optional<Role> roleOptional = roleRepository.findByName("USER");
@@ -224,5 +275,30 @@ public class UserService {
 		return userRepository.findByUsername(userName)
 				.orElseThrow(() -> new UserNotFoundException("User not found with userName: " + userName));
 
+	}
+
+	@KafkaListener(topics = TO_DO_LOGGED_IN_USER)
+	public void userListener(ConsumerRecord<String, String> consumerRecord, Acknowledgment ack) {
+
+		try {
+			String key = consumerRecord.key();
+			String value = consumerRecord.value();
+			int partition = consumerRecord.partition();
+			User user = objectMapper.readValue(value, User.class);
+
+			logger.info("value : {}", value);
+			logger.info("Consumed message : " + user + " with key : " + key + " from partition : " + partition);
+			if (value != null) {
+				userRepository.save(user);
+				logger.info("User logged in to Regiser database : {}", user);
+
+				ack.acknowledge();
+			} else {
+				logger.warn("Received null value from Kafka topic. {}", TO_DO_LOGGED_IN_USER);
+			}
+		} catch (Exception e) {
+			logger.error("Error processing Kafka message: {}", e.getMessage());
+			// Handle the exception (e.g., log, retry, or skip)
+		}
 	}
 }

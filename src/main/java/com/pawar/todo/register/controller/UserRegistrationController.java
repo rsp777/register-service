@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -67,11 +68,14 @@ public class UserRegistrationController {
 			try {
 				User registered = userService.registerNewUserAccount(userDto, roleDtos);
 				VerificationToken token = verificationTokenService.createVerificationToken(registered);
-				mailService.sendMail(registered.getEmail(), "Registration Confirmation", "To confirm your e-mail address, please click the link below:\n" + "http://192.168.29.137:8082/api/confirm?token=" + token.getToken());
+				mailService.sendMail(registered.getEmail(), "Registration Confirmation", "To confirm your e-mail address, please click the link below:\n" + "http://"+InetAddress.getLocalHost().getHostAddress()+":8082/register-service/confirm?token=" + token.getToken());
 				logger.info("User registered successfully with username: {}", userDto.getUsername());
 				return new ResponseEntity<>(registered, HttpStatus.CREATED);
 			} catch (JsonProcessingException e) {
 				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnknownHostException e) {
+				
 				e.printStackTrace();
 			}
 			
@@ -153,18 +157,18 @@ public class UserRegistrationController {
 	}
 	
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
-	@PutMapping("/users/id/{userId}")
+	@PatchMapping("/users/id/{userId}")
 	public ResponseEntity<User> updateRole(@PathVariable Long userId, @Valid @RequestBody UserDto userDto) {
 		try {
 			User user = userService.updateUser(userId, userDto);
-			logger.info("Role updated successfully with ID: {}", user.getUser_id());
+			logger.info("User updated successfully with ID: {}", user.getUser_id());
 			return ResponseEntity.ok(user);
 		} catch (UserNotFoundException e) {
 			logger.error("User not found with ID: {}", userId, e);
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage(), e);
 		} catch (Exception e) {
 			logger.error("Failed to update user with ID: {}", userId, e);
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Role update failed", e);
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User update failed", e);
 		}
 	}
 	

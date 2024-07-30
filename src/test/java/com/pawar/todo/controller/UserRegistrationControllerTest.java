@@ -55,7 +55,7 @@ public class UserRegistrationControllerTest {
     public void testRegisterUserAccount_Success() throws Exception {
         // Given
         UserDto userDto = new UserDto("rsp777","rasp@gmail.com","pawar"); // Populate with test data
-        User registeredUser = new User("rsp777","rasp@gmail.com","pawar"); // Populate with test data
+        User registeredUser = new User("rsp777","rasp@gmail.com","pawar", "Ravindra","Singh","Pawar"); // Populate with test data
         VerificationToken token = new VerificationToken(); // Populate with test data
         
         when(userService.registerNewUserAccount(any(UserDto.class), anySet())).thenReturn(registeredUser);
