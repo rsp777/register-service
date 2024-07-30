@@ -66,7 +66,11 @@ jobs:
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
-
+        
+    - name: Maven Build
+      run: mvn clean install -s $GITHUB_WORKSPACE/settings.xml
+      env:
+          GITHUB_TOKEN: ${{ github.token }}
     # Build the Docker image
     - name: Build
       run: |-
