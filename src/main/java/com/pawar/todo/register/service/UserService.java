@@ -289,10 +289,18 @@ public class UserService {
 			logger.info("value : {}", value);
 			logger.info("Consumed message : " + user + " with key : " + key + " from partition : " + partition);
 			if (value != null) {
-				userRepository.save(user);
-				logger.info("User logged in to Regiser database : {}", user);
+				if (user.getLoggedIn()==true) {
+					userRepository.save(user);
+					logger.info("User logged in : {}", user.getUsername());
 
-				ack.acknowledge();
+					ack.acknowledge();
+				}
+				else {
+					userRepository.save(user);
+					logger.info("User logged out : {}", user.getUsername());
+
+					ack.acknowledge();
+				}
 			} else {
 				logger.warn("Received null value from Kafka topic. {}", TO_DO_LOGGED_IN_USER);
 			}
