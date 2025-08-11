@@ -10,7 +10,7 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.pawar.todo</groupId>
-	<artifactId>register</artifactId>
+	<artifactId>register-service</artifactId>
 	<version>Dev_v2.1</version>
 	<name>register-service</name>
 	<description>register-service</description>
