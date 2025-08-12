@@ -29,7 +29,7 @@ import com.pawar.todo.register.service.RoleService;
 
 
 @RestController
-@RequestMapping("/register-service")
+@RequestMapping("/")
 public class RoleController {
 
     private static final Logger logger = LoggerFactory.getLogger(RoleController.class);

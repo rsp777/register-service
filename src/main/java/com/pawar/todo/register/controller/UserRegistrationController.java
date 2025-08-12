@@ -41,7 +41,7 @@ import com.pawar.todo.register.service.VerificationTokenService;
 
 //@RefreshScope
 @RestController
-@RequestMapping("/register-service")
+@RequestMapping("/")
 public class UserRegistrationController {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserRegistrationController.class);
