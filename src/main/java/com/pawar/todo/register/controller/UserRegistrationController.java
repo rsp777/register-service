@@ -60,7 +60,8 @@ public class UserRegistrationController {
 	public ResponseEntity<User> registerUserAccount(@RequestBody UserDto userDto) {
 		logger.debug("Registering user account with username: {}", userDto.getUsername());
 		try {
-			Set<RoleDto> roleDtos = defaultUserRole();
+			logger.info("RoleDtos : {}",userDto.getRoles());
+			Set<RoleDto> roleDtos = userDto.getRoles() != null ? userDto.getRoles() : defaultUserRole();
 			logger.info("RoleDtos : {}",roleDtos);
 			
 			
