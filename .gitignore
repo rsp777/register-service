@@ -6,7 +6,8 @@
 .classpath
 .factorypath
 */target/*
-*/logs/*
+logs/
+**/logs/
 
 
 HELP.md
@@ -44,4 +45,4 @@ build/
 .vscode/
 
 ### Logs ###
-!**/logs/**
+# logs/ directories are ignored above
