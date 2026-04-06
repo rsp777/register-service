@@ -12,7 +12,6 @@ import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -40,9 +39,9 @@ import com.pawar.todo.register.service.MailService;
 import com.pawar.todo.register.service.UserService;
 import com.pawar.todo.register.service.VerificationTokenService;
 
-@RefreshScope
+//@RefreshScope
 @RestController
-@RequestMapping("/register-service")
+@RequestMapping("/")
 public class UserRegistrationController {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserRegistrationController.class);
@@ -61,7 +60,8 @@ public class UserRegistrationController {
 	public ResponseEntity<User> registerUserAccount(@RequestBody UserDto userDto) {
 		logger.debug("Registering user account with username: {}", userDto.getUsername());
 		try {
-			Set<RoleDto> roleDtos = defaultUserRole();
+			logger.info("RoleDtos : {}",userDto.getRoles());
+			Set<RoleDto> roleDtos = userDto.getRoles() != null ? userDto.getRoles() : defaultUserRole();
 			logger.info("RoleDtos : {}",roleDtos);
 			
 			

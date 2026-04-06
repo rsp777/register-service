@@ -13,7 +13,7 @@ spec:
     spec:                          
       containers:                  
         - name: register-service              
-          image: register-service             
+          image: us-central1-docker.pkg.dev/psyched-freedom-427313-r9/register-service/register-service             
           resources:               
             limits:                
               memory: "128Mi"      

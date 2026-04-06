@@ -1,3 +1,15 @@
+.log*
+.jar
+.properties
+.project
+.settings
+.classpath
+.factorypath
+*/target/*
+logs/
+**/logs/
+
+
 HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -33,4 +45,4 @@ build/
 .vscode/
 
 ### Logs ###
-!**/logs/**
+# logs/ directories are ignored above

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.pawar.inventory.model.Inventory;
+import com.pawar.inventory.entity.Inventory;
 import com.pawar.todo.dto.RoleDto;
 import com.pawar.todo.dto.UserDto;
 import com.pawar.todo.dto.UserRolesDto;

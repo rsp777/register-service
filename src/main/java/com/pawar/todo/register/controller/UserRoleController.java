@@ -25,7 +25,7 @@ import com.pawar.todo.register.exception.UserNotFoundException;
 import com.pawar.todo.register.service.UserRoleService;
 
 @RestController
-@RequestMapping("/register-service")
+@RequestMapping("/")
 public class UserRoleController {
 
 	private static final Logger logger = LoggerFactory.getLogger(UserRoleController.class);

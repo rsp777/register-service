@@ -21,7 +21,7 @@ import com.pawar.todo.register.exception.RoleAssignmentException;
 import com.pawar.todo.register.service.RolePermissionService;
 
 @RestController
-@RequestMapping("/register-service")
+@RequestMapping("/")
 public class RolePermissionsController {
 
 	private static final Logger logger = LoggerFactory.getLogger(RolePermissionsController.class);
